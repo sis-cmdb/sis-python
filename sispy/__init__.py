@@ -1,13 +1,12 @@
 # -*- coding: utf-8 -*-
 
-__version__ = (0, 3, 6)
-
+__version__ = (0, 3, 7)
 __author__ = 'Anton Gavrik'
 
 import json
 import logging
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 class Response(object):
     """ Represent the client's response.

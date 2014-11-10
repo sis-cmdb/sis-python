@@ -126,11 +126,12 @@ response = client.schemas.delete('test_schema')
 
 # API
 
-**sispy.Client(url, version=1.1, auth_token=None)**
+**sispy.Client(url, version=1.1, auth_token=None, http_keep_alive=True)**
 
 * `url` should contain url of the SIS API server
 * `version` API version
 * `auth_token` is an optional field that is sent in the `x-auth-token` header
+* `http_keep_alive` optional, if set to False `Connection`: 'close' header will be added to all http requests (this disables HTTP Keep-Alive in httplib2 handler).
 
 ## Client authentication
 
@@ -239,7 +240,7 @@ This maps to a PUT '/id' request against the appropriate v1 endpoint.
 
 * id : a string representing the ID of the object on the server. For schemas, hooks, and hiera, this is the `name`.  For entities, it is the `_id`
 
-* content : a valid dictionary conforming to the endpoint specification
+* content : a valid dictionary or a list of dictionaries conforming to the endpoint specification
 
 The updated dict-like Response representing the object is returned on success.
 

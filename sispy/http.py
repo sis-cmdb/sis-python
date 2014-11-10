@@ -12,13 +12,13 @@ except ImportError:
 
 from . import Response, Error, Meta
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 def get_handler():
     """ Returns an appropriate http handler object based on what's 
     http handling library is available
     """
-    log.debug('using %s library to handle HTTP' % HTTP_LIB)
+    LOG.debug('using %s library to handle HTTP' % HTTP_LIB)
 
     if HTTP_LIB == 'urllib2':    
         return URLLIB2Handler()
@@ -72,7 +72,7 @@ class URLLIB2Handler(HTTPHandler):
             new_req.get_method = lambda: request.method
 
         # send request
-        log.debug(request)
+        LOG.debug(request)
         try:
             response = urllib2.urlopen(new_req)
         except urllib2.HTTPError as e:
@@ -108,7 +108,7 @@ class HTTPLIB2Handler(HTTPHandler):
         self._http = httplib2.Http(disable_ssl_certificate_validation=True)
         
     def request(self, request):
-        log.debug(request)
+        LOG.debug(request)
         (response, content) = self._http.request(
             request.uri,
             method=request.method,

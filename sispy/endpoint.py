@@ -8,7 +8,7 @@ import http
 
 from . import Error, Response
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 class Endpoint(object):
     def __init__(self, endpoint, client):
@@ -133,6 +133,10 @@ class Endpoint(object):
 
         if self.client.auth_token:
             headers['x-auth-token'] = self.client.auth_token
+
+        # do not use keep-alive
+        if not self.client.http_keep_alive:
+            headers['Connection'] = 'close'
 
         return headers
 
