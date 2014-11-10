@@ -24,7 +24,7 @@ setup (
     description='Python client library for interacting with the SIS RESTful API',
     packages=['sispy'],
     url='https://github.com/sis-cmdb/sis-python',
-    download_url='https://github.com/sis-cmdb/sis-python/tarball/%s' % version,
+    download_url='https://github.com/sis-cmdb/sis-python/tarball/v%s' % version,
     license='BSD 3-Clause'
 )
 
