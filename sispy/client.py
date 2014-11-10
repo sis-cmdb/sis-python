@@ -6,13 +6,15 @@ import logging
 import http
 import endpoint
 
-log = logging.getLogger(__name__)
+LOG = logging.getLogger(__name__)
 
 class Client(object):
-    def __init__(self, url, version=1.1, auth_token=None):
+    def __init__(self, url, version=1.1, auth_token=None,
+                 http_keep_alive=True):
         self.version = version
         self.base_uri = '%s/api/v%s' % (url.rstrip('/'), self.version)
         self.auth_token = auth_token
+        self.http_keep_alive=http_keep_alive    
 
         self._http_handler = http.get_handler()
 
