@@ -14,9 +14,10 @@ from . import Response, Error, Meta
 
 LOG = logging.getLogger(__name__)
 
-def get_handler():
+def get_handler(http_keep_alive=True):
     """ Returns an appropriate http handler object based on what's 
     http handling library is available
+
     """
     LOG.debug('using %s library to handle HTTP' % HTTP_LIB)
 
@@ -24,10 +25,11 @@ def get_handler():
         return URLLIB2Handler()
 
     elif HTTP_LIB == 'httplib2':
-        return HTTPLIB2Handler()
+        return HTTPLIB2Handler(http_keep_alive=http_keep_alive)
 
 class Request(object):
     """ HTTP request proxy class
+
     """
     def __init__(self, uri, method='GET', body=None, headers=None):
         self.uri = uri
@@ -43,9 +45,10 @@ class Request(object):
 
 class HTTPHandler(object):
     """ HTTP Handler proxy base class
+
     """
-    def __init__(self):
-        pass
+    def __init__(self, http_keep_alive=True):
+        self.http_keep_alive = http_keep_alive
 
     def request(self):
         # child classes must overwrite this
@@ -54,8 +57,8 @@ class HTTPHandler(object):
 class URLLIB2Handler(HTTPHandler):
     """ Handles http requests using urllib2 
     """
-    def __init__(self): 
-        super(URLLIB2Handler, self).__init__()
+    def __init__(self, *args, **kwargs): 
+        super(URLLIB2Handler, self).__init__(*args, **kwargs)
 
     def request(self, request):
         # create urllib2 Request() object, set uri and body contents if any
@@ -85,12 +88,10 @@ class URLLIB2Handler(HTTPHandler):
             if not error:
                 error = e.reason
 
-            raise Error(
-                http_status_code=e.code,
-                error=error,
-                code=code,
-                response_dict=response_dict
-            )
+            raise Error(http_status_code=e.code,
+                        error=error,
+                        code=code,
+                        response_dict=response_dict)
 
         # read response
         result = json.loads(response.read())
@@ -101,20 +102,32 @@ class URLLIB2Handler(HTTPHandler):
 
 class HTTPLIB2Handler(HTTPHandler):
     """ Handles HTTP requests using httplib2
+
     """          
-    def __init__(self):
-        super(HTTPLIB2Handler, self).__init__()
+    def __init__(self, *args, **kwargs):
+        super(HTTPLIB2Handler, self).__init__(*args, **kwargs)
 
         self._http = httplib2.Http(disable_ssl_certificate_validation=True)
         
     def request(self, request):
+        if not self.http_keep_alive:
+            # ask the server to close the connection
+            if not hasattr(request, 'headers'):
+                request.headers = {}
+            request.headers['Connection'] = 'close'
+
         LOG.debug(request)
-        (response, content) = self._http.request(
-            request.uri,
-            method=request.method,
-            body=request.body,
-            headers=request.headers
-        )
+
+        (response, content) = self._http.request(request.uri,
+                                                 method=request.method,
+                                                 body=request.body,
+                                                 headers=request.headers)
+
+        if not self.http_keep_alive:
+            # manually force close any open connections
+            for connection in self._http.connections.itervalues():
+                if hasattr(connection, 'sock') and connection.sock:
+                    connection.close()
 
         result = json.loads(content)
         meta = Meta(response)
@@ -127,12 +140,10 @@ class HTTPLIB2Handler(HTTPHandler):
             # if not available set to None
             error = result.get('error')
 
-            raise Error(
-                http_status_code=response.status,
-                error=error,
-                code=code,
-                response_dict=result
-            )
+            raise Error(http_status_code=response.status,
+                        error=error,
+                        code=code,
+                        response_dict=result)
 
         # else return Response
         return Response(result, meta)

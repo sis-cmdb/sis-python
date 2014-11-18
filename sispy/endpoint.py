@@ -19,6 +19,7 @@ class Endpoint(object):
         """Returns a Response() list-like object
 
         Response()._meta.total_count is the total number of items
+
         """
         return self._get(query=query)
 
@@ -27,6 +28,7 @@ class Endpoint(object):
         returns a Response() list-like object of items fetched.
 
         Response._meta.headers is set to headers of the last HTTP request
+
         """    
         if not query:
             query = {}
@@ -44,30 +46,30 @@ class Endpoint(object):
 
     def get(self, id):
         """ API GET
+
         """
         return self._get(id)
 
     def create(self, content):
         """ API POST
+
         """
-        request = http.Request(
-            uri = self._get_uri(),
-            method = 'POST',
-            body = json.dumps(content),
-            headers = self._get_headers(add_content=True)    
-        )
+        headers = self._get_headers(add_content=True)
+        request = http.Request(uri=self._get_uri(),
+                               method='POST',
+                               body=json.dumps(content),
+                               headers=headers)
 
         return self.client.request(request)
 
     def update(self, id, content, query=None):
         """ API PUT
         """
-        request = http.Request(
-            uri = self._get_uri(id, query),
-            method = 'PUT',
-            body = json.dumps(content),
-            headers = self._get_headers(add_content=True)
-        )
+        headers = self._get_headers(add_content=True)
+        request = http.Request(uri=self._get_uri(id, query),
+                               method='PUT',
+                               body=json.dumps(content),
+                               headers=headers)
 
         return self.client.request(request)
 
@@ -79,48 +81,47 @@ class Endpoint(object):
             'errors': [<items>],
             'success': [<items>]
         }
+
         """
-        if not isinstance(query, dict) or not isinstance(query.get('q', None), dict):
-            raise Error(
-                http_status_code=400,
-                error="Query must be a dictionary and contain a q dict",
-                code=0,
-                response_dict={ }
-            )
+        if not isinstance(query, dict) \
+            or not isinstance(query.get('q', None), dict):
+            err_msg = 'query must be a dictionary and contain a q dict'
+            raise Error(http_status_code=400,
+                        error=err_msg,
+                        code=0,
+                        response_dict={ })
+
         q = query.get('q')
         if not len(q.keys()):
-            raise Error(
-                http_status_code=400,
-                error="q dictionary must be a non empty",
-                code=0,
-                response_dict={ }
-            )
+            err_msg = 'query dictionary must be a non empty' 
+            raise Error(http_status_code=400,
+                        error=err_msg,
+                        code=0,
+                        response_dict={ })
 
-        request = http.Request(
-            uri = self._get_uri(query=query),
-            method = 'DELETE',
-            headers = self._get_headers(add_content=True)
-        )
+        headers = self._get_headers(add_content=True)
+        request = http.Request(uri=self._get_uri(query=query),
+                               method='DELETE',
+                               headers=headers)
 
         return self.client.request(request)
 
     def delete(self, id):
         """ API DELETE
+
         """
-        request = http.Request(
-            uri = self._get_uri(id),
-            method = 'DELETE',
-            headers = self._get_headers(add_content=True)
-        )
+        headers = self._get_headers(add_content=True)
+        request = http.Request(uri=self._get_uri(id),
+                               method='DELETE',
+                               headers=headers)
 
         return self.client.request(request)
 
     def _get(self, obj=None, query=None):
-        request = http.Request(
-            uri = self._get_uri(obj, query),
-            headers = self._get_headers(add_content=True)
-        )
-
+        headers = self._get_headers(add_content=True)
+        request = http.Request(uri = self._get_uri(obj, query),
+                               headers=headers)
+        
         return self.client.request(request)
 
     def _get_headers(self, add_content):
@@ -133,10 +134,6 @@ class Endpoint(object):
 
         if self.client.auth_token:
             headers['x-auth-token'] = self.client.auth_token
-
-        # do not use keep-alive
-        if not self.client.http_keep_alive:
-            headers['Connection'] = 'close'
 
         return headers
 
@@ -156,5 +153,6 @@ class Endpoint(object):
         if obj:
             path_str = '/%s' % str(obj)
 
-        return ('%s/%s%s%s' % (self.client.base_uri, self.endpoint, path_str, query_str))
+        return ('%s/%s%s%s' % (self.client.base_uri, self.endpoint, 
+                               path_str, query_str))
 

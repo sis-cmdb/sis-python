@@ -7,7 +7,8 @@ from sispy import Client, Error
 class Test(unittest.TestCase):
     def __init__(
         self, url, username, password, owner, 
-        test_schema_name='python_client_test'
+        test_schema_name='python_client_test',
+        http_keep_alive=True
     ):
         super(Test, self).__init__()
 
@@ -16,9 +17,11 @@ class Test(unittest.TestCase):
         self.password = password
         self.owner = owner
         self.test_schema_name = test_schema_name    
+        self.http_keep_alive = http_keep_alive
 
     def setUp(self):
-        self.client = Client(url=self.url)
+        self.client = Client(url=self.url,
+                             http_keep_alive=self.http_keep_alive)
 
         # auth
         self.client.authenticate(self.username, self.password)
