@@ -2,4 +2,4 @@
 build/
 dist/
 MANIFEST
-
+run_tests.py

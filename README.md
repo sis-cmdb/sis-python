@@ -131,7 +131,7 @@ response = client.schemas.delete('test_schema')
 * `url` should contain url of the SIS API server
 * `version` API version
 * `auth_token` is an optional field that is sent in the `x-auth-token` header
-* `http_keep_alive` optional, if set to False `Connection`: 'close' header will be added to all http requests (this disables HTTP Keep-Alive in httplib2 handler).
+* `http_keep_alive` optional, only affects httplib2 handler, if set to False `Connection`: `close` header will be added to all http requests and any opened connections will be forced to close after each request.
 
 ## Client authentication
 

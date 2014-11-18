@@ -16,7 +16,7 @@ class Client(object):
         self.auth_token = auth_token
         self.http_keep_alive=http_keep_alive    
 
-        self._http_handler = http.get_handler()
+        self._http_handler = http.get_handler(http_keep_alive=http_keep_alive)
 
         # api endpoints
         self.schemas = endpoint.Endpoint('schemas', self)
@@ -34,16 +34,15 @@ class Client(object):
         return self._http_handler.request(request)
 
     def authenticate(self, username, password):
-        request = http.Request(
-            uri='%s/users/auth_token' % self.base_uri,
-            method='POST',
-            headers={
-                'Authorization': 'Basic %s' % base64.b64encode(
-                    '%s:%s' % (username, password)
-                )
-           }     
-        )
+        uri = '%s/users/auth_token' % self.base_uri
+        enc_creds = base64.b64encode('%s:%s' % (username, password))
+        headers = { 'Authorization': 'Basic %s' % enc_creds }
+
+        request = http.Request(uri=uri,
+                               method='POST',
+                               headers=headers)
 
         self.auth_token =  self.request(request)['name']
+
         return True
 
