@@ -140,9 +140,10 @@ class Endpoint(object):
     def _get_uri(self, obj=None, query=None):
         query_str = ''
         path_str = ''
-        if isinstance(query, dict):
-            query = query.copy()
 
+        # ignore empty dict
+        if isinstance(query, dict) and query:
+            query = query.copy()
             for k in query:
                 # support cas / q params as dict
                 if isinstance(query[k], dict):
