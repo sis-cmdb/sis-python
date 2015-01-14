@@ -170,7 +170,7 @@ for field in response:
 print response['field1']
 ```
 
-`Response.to_dict()` and `Response.to_list()` methods are also available, returning a dict() and list() object representation respectively.
+`Response.to_dict()` and `Response.to_list()` methods are also available, returning a dict() or a list() object representation respectively.
 
 `Response` object consists of the below attributes, it is discouraged to access them directly (as these might change in the future) but use the access techniqies outlined above.
 
