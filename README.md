@@ -144,7 +144,7 @@ On success `client.auth_token` is set to the temporary token acquired.
 
 ## Responses
 
-All methods return sispy.Response() object that can be iterated over or accessed similar to a dict or a list (depending on the method used).
+All methods return `sispy.Response()` object that can be iterated over or accessed similar to a dict or a list (depending on the method used).
 
 List-like response
 ```python
@@ -170,7 +170,9 @@ for field in response:
 print response['field1']
 ```
 
-sispy.Response object consists of the below attributes, it is discouraged to access them directly (as these might change in the future) but use the access techniqies outlined above.
+`Response.to_dict()` and `Response.to_list()` methods are also available, returning a dict() and list() object representation respectively.
+
+`Response` object consists of the below attributes, it is discouraged to access them directly (as these might change in the future) but use the access techniqies outlined above.
 
 * `sispy.Response._result` contains decoded http body (either a list or a dict) and can be inspected directly
 * `sispy.Response._meta` holds meta data associated with the response
