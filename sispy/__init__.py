@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-__version__ = (0, 3, 10)
+__version__ = (0, 3, 11)
 __author__ = 'Anton Gavrik'
 
 import json
@@ -43,7 +43,25 @@ class Response(object):
         
     def __str__(self):
         return str(self._result)
- 
+
+    def to_dict(self):
+        """Returns dictionary representaton of the object
+        
+        """
+        if not isinstance(self._result, dict):
+            raise Error('{} is not a dict-like object'.format(
+                self.__class__.__name__))
+        return dict(self._result)
+
+    def to_list(self):
+        """Returns list representaton of the object
+        
+        """
+        if not isinstance(self._result, list):
+            raise Error('{} is not a list-like object'.format(
+                self.__class__.__name__))
+        return list(self._result)
+
 class Meta(object):
     """ Represents meta data in the clients response.
     """
