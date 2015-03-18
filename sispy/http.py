@@ -3,12 +3,25 @@
 import json
 import logging
 
+# try to use httplib2, if not available - use urllib2
+HTTP_LIB = 'urllib2'
 try:
     import httplib2
-    HTTP_LIB = 'httplib2'
 except ImportError:
     import urllib2
-    HTTP_LIB = 'urllib2'
+else:
+    HTTP_LIB = 'httplib2'
+
+# if using urllib2, determine if urllib2.urlopen supports 'context' arg
+# if it does, also import ssl module
+if HTTP_LIB == 'urllib2':
+    URLOPEN_CONTEXT = False
+
+    import inspect
+    _spec = inspect.getargspec(urllib2.urlopen)
+    if 'context' in _spec.args:
+        URLOPEN_CONTEXT = True
+        import ssl    
 
 from . import Response, Error, Meta
 
@@ -77,7 +90,14 @@ class URLLIB2Handler(HTTPHandler):
         # send request
         LOG.debug(request)
         try:
-            response = urllib2.urlopen(new_req)
+            # if running a Python version where SSL cert validation
+            # has been enabled by default (2.7.9+), disable validation
+            if URLOPEN_CONTEXT:
+                response = urllib2.urlopen(
+                    new_req, context=ssl._create_unverified_context())
+            else:
+                response = urllib2.urlopen(new_req)
+
         except urllib2.HTTPError as e:
             response_dict = json.loads(e.read())
             code = response_dict.get('code')
