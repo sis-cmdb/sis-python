@@ -14,9 +14,9 @@ Python client library for interacting with the SIS RESTful API.
   
 # Dependencies
 
-The client will attempt to use `httplib2` by default, if unavailable it will fall back to `urllib2`. 
-
-**Important:** It is highly recommended to have `httplib2` installed as it may significantly improve the client's performance. 
+The client will work using the standard library only, however, if the bellow packages are installed, it will automatically attempt to use them in order to siginificantly improve it's performance:
+- requests (https://pypi.python.org/pypi/requests/)
+- ujson (https://pypi.python.org/pypi/ujson)
 
 # Installation
 
@@ -125,12 +125,11 @@ response = client.schemas.delete('test_schema')
 
 # API
 
-**sispy.Client(url, version=1.1, auth_token=None, http_keep_alive=True)**
+**sispy.Client(url, version=1.1, auth_token=None)**
 
 * `url` should contain url of the SIS API server
 * `version` API version
 * `auth_token` is an optional field that is sent in the `x-auth-token` header
-* `http_keep_alive` optional, only affects httplib2 handler, if set to False `Connection`: `close` header will be added to all http requests and any opened connections will be forced to close after each request.
 
 ## Client authentication
 
@@ -143,7 +142,7 @@ On success `client.auth_token` is set to the temporary token acquired.
 
 ## Responses
 
-All methods return `sispy.Response()` object that can be iterated over or accessed similar to a dict or a list (depending on the method used).
+All methods return `sispy.Response()` object that can be iterated over (using `for in`) or accessed similar to a dict or a list (depending on the method used).
 
 List-like response
 ```python

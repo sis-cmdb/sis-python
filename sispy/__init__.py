@@ -1,19 +1,27 @@
 # -*- coding: utf-8 -*-
 
-__version__ = (0, 3, 12)
+"""Client library for interacting with the SIS RESTful API"""
+
+__version__ = (0, 4, 1)
 __author__ = 'Anton Gavrik'
 
-import json
 import logging
 
 LOG = logging.getLogger(__name__)
 
+# attempt to use ujson to handle json, fall back to stdlib json if unavailable
+try:
+    import ujson as json
+except ImportError:
+    import json
+
 class Response(object):
-    """ Represent the client's response.
+    """Represent the client's response.
 
     Depending on the calling method behaves either like a dictionary 
     for methods returning a single object e.g. .get() or like a list
     for methods returning multiple objects e.g. .fetch_all()
+
     """
     def __init__(self, result, meta=None):
         self._result = result    
@@ -34,8 +42,10 @@ class Response(object):
     def __iter__(self):
         return iter(self._result)
 
-    # "x in Response"
     def __contains__(self, item):
+        """x in Response 
+
+        """     
         if item in self._result:
             return True
         else:
@@ -45,7 +55,7 @@ class Response(object):
         return str(self._result)
 
     def to_dict(self):
-        """Returns dictionary representaton of the object
+        """Returns a dict representaton of the object
         
         """
         if not isinstance(self._result, dict):
@@ -54,7 +64,7 @@ class Response(object):
         return dict(self._result)
 
     def to_list(self):
-        """Returns list representaton of the object
+        """Returns a list representation of the object
         
         """
         if not isinstance(self._result, list):
@@ -63,11 +73,11 @@ class Response(object):
         return list(self._result)
 
 class Meta(object):
-    """ Represents meta data in the clients response.
-    """
+    """Represents meta data in the clients response."""
+
     def __init__(self, headers):
         """    
-        Args:
+        args:
             headers: dict containing http headers
 
         Derived attributes:
@@ -81,18 +91,17 @@ class Meta(object):
             self.total_count = int(self.headers['x-total-count'])
 
 class Error(Exception):
-    """ SIS Error
-    """
-    def __init__(
-        self, error, http_status_code=None, code=None, response_dict={}
-    ):
+    """SIS Error"""
+
+    def __init__(self, error, http_status_code=None, 
+                 code=None, response_dict={}):
         """
-            Args:
-                error: string representing error description
-                code: string representing error code
-                http_status_code: HTTP status code
-                response_dict: dictionary representing encoded 
-                    http response body 
+        args:
+            error: string representing error description
+            code: string representing error code
+            http_status_code: HTTP status code
+            response_dict: dictionary representing encoded 
+                http response body 
         """
         self.error = error
         self.http_status_code = http_status_code
@@ -102,19 +111,16 @@ class Error(Exception):
         super(Error, self).__init__(self.__str__())
 
     def __repr__(self):
-        return (
-            'Error(http_status_code="{http_status_code}", '
-            'error={error}, code="{code}", '
-            'response_dict={response_dict})'.format(
-                error=json.dumps(self.error),
-                code=self.code,
-                http_status_code=self.http_status_code,
-                response_dict=json.dumps(str(self.response_dict))
-            )
-        )
+        return ('Error(http_status_code="{http_status_code}", '
+                'error={error}, code="{code}", '
+                'response_dict={response_dict})'
+                .format(error=json.dumps(self.error),
+                        code=self.code,
+                        http_status_code=self.http_status_code,
+                        response_dict=json.dumps(str(self.response_dict))))
 
     def __str__(self):
         return self.error
 
-from client import Client
+from .client import Client
 
