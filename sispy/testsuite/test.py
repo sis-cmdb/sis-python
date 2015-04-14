@@ -5,10 +5,10 @@ import unittest
 from sispy import Client, Error
 
 class Test(unittest.TestCase):
+
     def __init__(
         self, url, username, password, owner, 
         test_schema_name='python_client_test',
-        http_keep_alive=True
     ):
         super(Test, self).__init__()
 
@@ -17,11 +17,9 @@ class Test(unittest.TestCase):
         self.password = password
         self.owner = owner
         self.test_schema_name = test_schema_name    
-        self.http_keep_alive = http_keep_alive
 
     def setUp(self):
-        self.client = Client(url=self.url,
-                             http_keep_alive=self.http_keep_alive)
+        self.client = Client(url=self.url)
 
         # auth
         self.client.authenticate(self.username, self.password)
@@ -47,22 +45,19 @@ class Test(unittest.TestCase):
         response = self.client.schemas.create(content)
 
         # create entities
-        e = []
-        for i in range(3000):
+        num = 1000
+        for i in range(num):
             content = {
                 'field1':  i,
             }
-            e.append(content)
-
-        response = self.client.entities(self.test_schema_name).create(e)
-
-        self.assertEqual(len(response['success']), 3000)
+            response = self.client.entities(
+                self.test_schema_name).create(content)
 
         # search for entitites
         response = self.client.entities(self.test_schema_name).fetch_all()
 
         self.assertIsInstance(response._result, list)
-        self.assertEqual(len(response), 3000)
+        self.assertEqual(len(response), num)
 
         # update schema
         content = {

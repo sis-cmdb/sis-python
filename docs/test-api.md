@@ -3,12 +3,11 @@
 Example of running the unittests:
 
 ```python
-#!/usr/bin/env python2.7
 """
 SIS Python client tests
 
-This needs to be ran multiple times - with httplib2 installed and
-without it.
+This needs to be ran multiple times - with ujson/requests installed and
+without those.
 
 """
 import getpass

@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from test import Test
+from .test import Test
 

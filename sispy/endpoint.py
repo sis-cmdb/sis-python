@@ -1,16 +1,15 @@
 # -*- coding: utf-8 -*-
 
 import logging
-import urllib
-import json
 
-import http
-
-from . import Error, Response
+from . import Error, Response, http, json
 
 LOG = logging.getLogger(__name__)
 
 class Endpoint(object):
+
+    """SIS endpoint"""
+
     def __init__(self, endpoint, client):
         self.endpoint = endpoint
         self.client = client
@@ -45,15 +44,12 @@ class Endpoint(object):
         return response
 
     def get(self, id):
-        """ API GET
-
-        """
+        """API GET """
         return self._get(id)
 
     def create(self, content):
-        """ API POST
+        """API POST """
 
-        """
         headers = self._get_headers(add_content=True)
         request = http.Request(uri=self._get_uri(),
                                method='POST',
@@ -63,8 +59,8 @@ class Endpoint(object):
         return self.client.request(request)
 
     def update(self, id, content, query=None):
-        """ API PUT
-        """
+        """API PUT """
+
         headers = self._get_headers(add_content=True)
         request = http.Request(uri=self._get_uri(id, query),
                                method='PUT',
@@ -74,9 +70,9 @@ class Endpoint(object):
         return self.client.request(request)
 
     def delete_bulk(self, query):
-        """ Bulk delete.
+        """Bulk delete.
 
-        Returns a Response dict-like object in the form of
+        Returns: a Response dict-like object in the form of
         {
             'errors': [<items>],
             'success': [<items>]
@@ -85,15 +81,15 @@ class Endpoint(object):
         """
         if not isinstance(query, dict) \
             or not isinstance(query.get('q', None), dict):
-            err_msg = 'query must be a dictionary and contain a q dict'
+            err_msg = 'query must be a dictionary and contain a "q" dict'
             raise Error(http_status_code=400,
                         error=err_msg,
                         code=0,
                         response_dict={ })
 
         q = query.get('q')
-        if not len(q.keys()):
-            err_msg = 'query dictionary must be a non empty' 
+        if not len(list(q.keys())):
+            err_msg = 'query dictionary must not be empty' 
             raise Error(http_status_code=400,
                         error=err_msg,
                         code=0,
@@ -107,9 +103,8 @@ class Endpoint(object):
         return self.client.request(request)
 
     def delete(self, id):
-        """ API DELETE
+        """API DELETE"""
 
-        """
         headers = self._get_headers(add_content=True)
         request = http.Request(uri=self._get_uri(id),
                                method='DELETE',
@@ -149,11 +144,12 @@ class Endpoint(object):
                 if isinstance(query[k], dict):
                     query[k] = json.dumps(query[k])
 
-            query_str = '?%s' % urllib.urlencode(query)
+            query_str = '?{}'.format(http.urlencode(query))
 
         if obj:
-            path_str = '/%s' % str(obj)
+            path_str = '/{}'.format(str(obj))
 
-        return ('%s/%s%s%s' % (self.client.base_uri, self.endpoint, 
-                               path_str, query_str))
+        resp = '{}/{}{}{}'.format(self.client.base_uri, self.endpoint,
+                                  path_str, query_str)
+        return resp
 

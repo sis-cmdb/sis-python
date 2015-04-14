@@ -1,49 +1,71 @@
 # -*- coding: utf-8 -*-
 
-import json
 import logging
+import sys
 
-# try to use httplib2, if not available - use urllib2
-HTTP_LIB = 'urllib2'
+# attempt to use requests by default, if not available fall back to the 
+# standard library
 try:
-    import httplib2
+    import requests
 except ImportError:
-    import urllib2
+    HTTP_LIB = 'stdlib'
 else:
-    HTTP_LIB = 'httplib2'
+    HTTP_LIB = 'requests'
 
-# if using urllib2, determine if urllib2.urlopen supports 'context' arg
-# if it does, also import ssl module
-if HTTP_LIB == 'urllib2':
-    URLOPEN_CONTEXT = False
+if HTTP_LIB == 'stdlib':
+    # for versions 2.7.9+ and 3.4.3+ we need unverified SSL context to disable
+    # SSL cer validation on per request basis
+    SSL_CONTEXT = None
+    import ssl
+    if hasattr(ssl, '_create_unverified_context'):
+        SSL_CONTEXT = ssl._create_unverified_context()
 
-    import inspect
-    _spec = inspect.getargspec(urllib2.urlopen)
-    if 'context' in _spec.args:
-        URLOPEN_CONTEXT = True
-        import ssl    
+    # py3
+    if sys.version_info.major >= 3:
+        import urllib.request, urllib.error
+        stdlib_request = urllib.request.Request
+        stdlib_HTTPError = urllib.error.HTTPError   
+        stdlib_urlopen = urllib.request.urlopen
 
-from . import Response, Error, Meta
+    # py2
+    else:
+        import urllib
+        import urllib2
+        stdlib_request = urllib2.Request
+        stdlib_HTTPError = urllib2.HTTPError
+        stdlib_urlopen = urllib2.urlopen
+
+elif HTTP_LIB == 'requests':
+    # this will disable InsecureRequestWarning
+    requests.packages.urllib3.disable_warnings()
+
+# urlencode method
+if sys.version_info.major >= 3:
+    import urllib.parse
+    urlencode = urllib.parse.urlencode
+else:
+    import urllib
+    urlencode = urllib.urlencode
+
+from . import json, Response, Error, Meta
 
 LOG = logging.getLogger(__name__)
 
-def get_handler(http_keep_alive=True):
-    """ Returns an appropriate http handler object based on what's 
-    http handling library is available
+def get_handler():
+    """Returns an appropriate http handler object based on the available 
+    http library.
 
     """
-    LOG.debug('using %s library to handle HTTP' % HTTP_LIB)
+    if HTTP_LIB == 'stdlib':    
+        return StdLibHandler()
 
-    if HTTP_LIB == 'urllib2':    
-        return URLLIB2Handler()
-
-    elif HTTP_LIB == 'httplib2':
-        return HTTPLIB2Handler(http_keep_alive=http_keep_alive)
+    elif HTTP_LIB == 'requests':
+        return RequestsHandler()
 
 class Request(object):
-    """ HTTP request proxy class
 
-    """
+    """HTTP request proxy"""
+
     def __init__(self, uri, method='GET', body=None, headers=None):
         self.uri = uri
         self.method = method
@@ -52,57 +74,60 @@ class Request(object):
 
     def __str__(self):
         s = ''
-        s += '%s ' % self.method
-        s += '%s ' % self.uri
+        s += '{} '.format(self.method)
+        s += '{} '.format(self.uri)
         return s
 
-class HTTPHandler(object):
-    """ HTTP Handler proxy base class
+class BaseHTTPHandler(object):
 
-    """
-    def __init__(self, http_keep_alive=True):
-        self.http_keep_alive = http_keep_alive
+    """HTTP Handler proxy base class"""
 
-    def request(self):
-        # child classes must overwrite this
-        raise NotImplementedError()
-
-class URLLIB2Handler(HTTPHandler):
-    """ Handles http requests using urllib2 
-    """
-    def __init__(self, *args, **kwargs): 
-        super(URLLIB2Handler, self).__init__(*args, **kwargs)
+    def __init__(self):
+        pass
 
     def request(self, request):
-        # create urllib2 Request() object, set uri and body contents if any
-        new_req = urllib2.Request(request.uri, data=request.body)
+        raise NotImplementedError
+
+class StdLibHandler(BaseHTTPHandler):
+
+    """Handles http using the standard library"""
+
+    def __init__(self, *args, **kwargs): 
+        super(StdLibHandler, self).__init__(*args, **kwargs)
+
+    def request(self, request):
+        # encode request.body (py3)
+        # POST data should be bytes or an iterable of bytes.
+        if request.body:
+            request.body = request.body.encode('utf-8')
+
+        # create Request() object, set uri and body contents if any
+        new_req = stdlib_request(request.uri, data=request.body)
 
         # add headers if present
         if request.headers:
             for header_name in request.headers:
                 new_req.add_header(header_name, request.headers[header_name])
 
-        # set method, if differet from GET
+        # set method, if different from GET
         if request.method != 'GET':
-            # urllib2 method needs to be a callable method
+            # urllib method needs to be a callable method
             new_req.get_method = lambda: request.method
 
         # send request
         LOG.debug(request)
         try:
-            # if running a Python version where SSL cert validation
-            # has been enabled by default (2.7.9+), disable validation
-            if URLOPEN_CONTEXT:
-                response = urllib2.urlopen(
-                    new_req, context=ssl._create_unverified_context())
+            # if SSL_CONTEXT is set urlopen is assumed to support context arg
+            if SSL_CONTEXT:
+                response = stdlib_urlopen(new_req, context=SSL_CONTEXT)
             else:
-                response = urllib2.urlopen(new_req)
+                response = stdlib_urlopen(new_req)
 
-        except urllib2.HTTPError as e:
-            response_dict = json.loads(e.read())
+        except stdlib_HTTPError as e:
+            response_dict = json.loads(e.read().decode('utf-8'))
             code = response_dict.get('code')
 
-            # attempt to use error from response body,
+            # lookup error in the response body,
             # if not available use http error info
             error = response_dict.get('error')
             if not error:
@@ -114,57 +139,61 @@ class URLLIB2Handler(HTTPHandler):
                         response_dict=response_dict)
 
         # read response
-        result = json.loads(response.read())
+        result = json.loads(response.read().decode('utf-8'))
+
         # build meta with headers as a dict
-        meta = Meta(response.info().dict)
+
+        # py3
+        if sys.version_info.major >= 3:
+            d = { k: v for (k,v) in response.info().items() }
+            meta = Meta(d)
+        # py2
+        else:
+            meta = Meta(response.info().dict)
+
         # return Response object    
         return Response(result, meta)
 
-class HTTPLIB2Handler(HTTPHandler):
-    """ Handles HTTP requests using httplib2
+class RequestsHandler(BaseHTTPHandler):
 
-    """          
+    """Handles HTTP using requests library"""          
+
     def __init__(self, *args, **kwargs):
-        super(HTTPLIB2Handler, self).__init__(*args, **kwargs)
+        super(RequestsHandler, self).__init__(*args, **kwargs)
 
-        self._http = httplib2.Http(disable_ssl_certificate_validation=True)
+        self._session = requests.Session()
         
     def request(self, request):
-        if not self.http_keep_alive:
-            # ask the server to close the connection
-            if not hasattr(request, 'headers'):
-                request.headers = {}
-            request.headers['Connection'] = 'close'
-
         LOG.debug(request)
 
-        (response, content) = self._http.request(request.uri,
-                                                 method=request.method,
-                                                 body=request.body,
-                                                 headers=request.headers)
+        # prepare request
+        req = requests.Request(request.method, request.uri, 
+                               data=request.body, headers=request.headers)
+        prepped = self._session.prepare_request(req)
 
-        if not self.http_keep_alive:
-            # manually force close any open connections
-            for connection in self._http.connections.itervalues():
-                if hasattr(connection, 'sock') and connection.sock:
-                    connection.close()
+        # send request
+        # stream=True immediately download the response 
+        # content(default is False)
+        # verify=False do not verify SSL cert
+        response = self._session.send(prepped, stream=True, verify=False)
 
-        result = json.loads(content)
-        meta = Meta(response)
+        # we always expect a json body
+        response_dict = json.loads(response.text)
 
         # raise Error if we got http status code >= 400
-        if response.status >= 400:
-            code = result.get('code')
+        if response.status_code >= 400:
+            # lookup error and code in the response dict
+            error = response_dict.get('error')
+            code = response_dict.get('code')
 
-            # attempt to use error from response body,
-            # if not available set to None
-            error = result.get('error')
-
-            raise Error(http_status_code=response.status,
+            raise Error(http_status_code=response.status_code,
                         error=error,
                         code=code,
-                        response_dict=result)
+                        response_dict=response_dict)
 
-        # else return Response
-        return Response(result, meta)
+        # create Meta
+        meta = Meta(response.headers)
+        
+        # return Response()
+        return Response(response_dict, meta)
 
