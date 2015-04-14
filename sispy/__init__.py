@@ -2,7 +2,7 @@
 
 """Client library for interacting with the SIS RESTful API"""
 
-__version__ = (0, 4, 0)
+__version__ = (0, 4, 1)
 __author__ = 'Anton Gavrik'
 
 import logging
