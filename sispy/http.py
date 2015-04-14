@@ -142,11 +142,14 @@ class StdLibHandler(BaseHTTPHandler):
         result = json.loads(response.read().decode('utf-8'))
 
         # build meta with headers as a dict
-
         # py3
         if sys.version_info.major >= 3:
-            d = { k: v for (k,v) in response.info().items() }
+            # python2.6 does not support dict comprehensions
+            d = {}
+            for k, v in response.info().items():
+                d[k] = v
             meta = Meta(d)
+
         # py2
         else:
             meta = Meta(response.info().dict)
