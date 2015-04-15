@@ -2,9 +2,10 @@
 
 import logging
 
-from . import Error, Response, http, json
+from . import Error, Response, http, json, NullHandler
 
 LOG = logging.getLogger(__name__)
+LOG.addHandler(NullHandler())
 
 class Endpoint(object):
 
@@ -144,12 +145,12 @@ class Endpoint(object):
                 if isinstance(query[k], dict):
                     query[k] = json.dumps(query[k])
 
-            query_str = '?{}'.format(http.urlencode(query))
+            query_str = '?{0}'.format(http.urlencode(query))
 
         if obj:
-            path_str = '/{}'.format(str(obj))
+            path_str = '/{0}'.format(str(obj))
 
-        resp = '{}/{}{}{}'.format(self.client.base_uri, self.endpoint,
+        resp = '{0}/{1}{2}{3}'.format(self.client.base_uri, self.endpoint,
                                   path_str, query_str)
         return resp
 

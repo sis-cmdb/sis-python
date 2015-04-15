@@ -9,10 +9,12 @@ Python client library for interacting with the SIS RESTful API.
   - [Client authentication](#client-authentication)  
   - [Responses](#responses)
   - [Variables & methods](#variables--methods)
+- [Thread safety](#thread-safety)
 - [Error handling](#error-handling)
 - [LICENSE](#license)
   
 # Dependencies
+- Python 2.6 - 3.4
 
 The client will work using the standard library only, however, if the bellow packages are installed, it will automatically attempt to use them in order to siginificantly improve it's performance:
 - requests (https://pypi.python.org/pypi/requests/)
@@ -125,11 +127,11 @@ response = client.schemas.delete('test_schema')
 
 # API
 
-**sispy.Client(url, version=1.1, auth_token=None)**
-
+**sispy.Client(url, version=1.1, auth_token=None, http_keep_alive=True)**
 * `url` should contain url of the SIS API server
 * `version` API version
 * `auth_token` is an optional field that is sent in the `x-auth-token` header
+* `http_keep_alive` optional, only affects requests library, when set to False `Connection: close` header will be added to all HTTP requests(see Thread safety paragraph)
 
 ## Client authentication
 
@@ -263,6 +265,9 @@ Returns a Response dict-like object in the form of
     'success': [<items>]
 }
 ```
+
+# Thread safety
+The same instance of the client can be shared amongst multiple threads if not using requests, or if using requests with http_keep_alive=False set.
 
 # Error handling
 
