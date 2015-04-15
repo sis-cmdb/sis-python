@@ -3,6 +3,11 @@
 import logging
 import sys
 
+from . import json, Response, Error, Meta, NullHandler
+
+LOG = logging.getLogger(__name__)
+LOG.addHandler(NullHandler())
+
 # attempt to use requests by default, if not available fall back to the 
 # standard library
 try:
@@ -17,11 +22,13 @@ if HTTP_LIB == 'stdlib':
     # SSL cer validation on per request basis
     SSL_CONTEXT = None
     import ssl
-    if hasattr(ssl, '_create_unverified_context'):
+    try:
         SSL_CONTEXT = ssl._create_unverified_context()
+    except AttributeError:
+        pass
 
     # py3
-    if sys.version_info.major >= 3:
+    if sys.version_info[0] >= 3:
         import urllib.request, urllib.error
         stdlib_request = urllib.request.Request
         stdlib_HTTPError = urllib.error.HTTPError   
@@ -37,21 +44,20 @@ if HTTP_LIB == 'stdlib':
 
 elif HTTP_LIB == 'requests':
     # this will disable InsecureRequestWarning
-    requests.packages.urllib3.disable_warnings()
+    try:
+        requests.packages.urllib3.disable_warnings()
+    except AttributeError:
+        pass
 
 # urlencode method
-if sys.version_info.major >= 3:
+if sys.version_info[0] >= 3:
     import urllib.parse
     urlencode = urllib.parse.urlencode
 else:
     import urllib
     urlencode = urllib.urlencode
 
-from . import json, Response, Error, Meta
-
-LOG = logging.getLogger(__name__)
-
-def get_handler():
+def get_handler(http_keep_alive=True):
     """Returns an appropriate http handler object based on the available 
     http library.
 
@@ -60,7 +66,7 @@ def get_handler():
         return StdLibHandler()
 
     elif HTTP_LIB == 'requests':
-        return RequestsHandler()
+        return RequestsHandler(http_keep_alive=http_keep_alive)
 
 class Request(object):
 
@@ -74,8 +80,8 @@ class Request(object):
 
     def __str__(self):
         s = ''
-        s += '{} '.format(self.method)
-        s += '{} '.format(self.uri)
+        s += '{0} '.format(self.method)
+        s += '{0} '.format(self.uri)
         return s
 
 class BaseHTTPHandler(object):
@@ -143,7 +149,7 @@ class StdLibHandler(BaseHTTPHandler):
 
         # build meta with headers as a dict
         # py3
-        if sys.version_info.major >= 3:
+        if sys.version_info[0] >= 3:
             # python2.6 does not support dict comprehensions
             d = {}
             for k, v in response.info().items():
@@ -161,13 +167,19 @@ class RequestsHandler(BaseHTTPHandler):
 
     """Handles HTTP using requests library"""          
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, http_keep_alive=True, *args, **kwargs):
         super(RequestsHandler, self).__init__(*args, **kwargs)
+
+        self.http_keep_alive = http_keep_alive
 
         self._session = requests.Session()
         
     def request(self, request):
         LOG.debug(request)
+
+        # add "Connection: close" header if not http_keep_alive 
+        if not self.http_keep_alive:
+            request.headers['Connection'] = 'close'
 
         # prepare request
         req = requests.Request(request.method, request.uri, 

@@ -2,12 +2,19 @@
 
 """Client library for interacting with the SIS RESTful API"""
 
-__version__ = (0, 4, 2)
+__version__ = (0, 4, 3)
 __author__ = 'Anton Gavrik'
 
 import logging
+try:  # Python 2.7+
+    from logging import NullHandler
+except ImportError:
+    class NullHandler(logging.Handler):
+        def emit(self, record):
+            pass
 
 LOG = logging.getLogger(__name__)
+LOG.addHandler(NullHandler())
 
 # attempt to use ujson to handle json, fall back to stdlib json if unavailable
 try:
@@ -59,7 +66,7 @@ class Response(object):
         
         """
         if not isinstance(self._result, dict):
-            raise Error('{} is not a dict-like object'.format(
+            raise Error('{0} is not a dict-like object'.format(
                 self.__class__.__name__))
         return dict(self._result)
 
@@ -68,7 +75,7 @@ class Response(object):
         
         """
         if not isinstance(self._result, list):
-            raise Error('{} is not a list-like object'.format(
+            raise Error('{0} is not a list-like object'.format(
                 self.__class__.__name__))
         return list(self._result)
 

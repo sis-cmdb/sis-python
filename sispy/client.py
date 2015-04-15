@@ -3,22 +3,24 @@
 import base64
 import logging
 
-from . import http
-from . import endpoint
+from . import http, endpoint, NullHandler
 
 LOG = logging.getLogger(__name__)
+LOG.addHandler(NullHandler())
 
 class Client(object):
 
     """SIS client"""
 
-    def __init__(self, url, version=1.1, auth_token=None):
+    def __init__(self, url, version=1.1, auth_token=None,
+                 http_keep_alive=True):
+
         self.version = version
-        self.base_uri = '{}/api/v{}'.format(url.rstrip('/'), self.version)
+        self.base_uri = '{0}/api/v{1}'.format(url.rstrip('/'), self.version)
         self.auth_token = auth_token
 
         # get http handler
-        self._http_handler = http.get_handler()
+        self._http_handler = http.get_handler(http_keep_alive=http_keep_alive)
 
         # api endpoints
         self.schemas = endpoint.Endpoint('schemas', self)
@@ -27,22 +29,22 @@ class Client(object):
         self.users = endpoint.Endpoint('users', self)
 
     def entities(self, schema_name):
-        return endpoint.Endpoint('entities/{}'.format(schema_name), self)
+        return endpoint.Endpoint('entities/{0}'.format(schema_name), self)
 
     def tokens(self, username):
-        return endpoint.Endpoint('users/{}/tokens'.format(username), self)
+        return endpoint.Endpoint('users/{0}/tokens'.format(username), self)
 
     def request(self, request):
         return self._http_handler.request(request)
 
     def authenticate(self, username, password):
-        uri = '{}/users/auth_token'.format(self.base_uri)
+        uri = '{0}/users/auth_token'.format(self.base_uri)
 
         # py3 base64.b64encode expects and returns a byte str
         enc_creds = base64.b64encode(
-            '{}:{}'.format(username, password).encode('utf-8')).decode('utf-8')
+            '{0}:{1}'.format(username, password).encode('utf-8')).decode('utf-8')
 
-        headers = { 'Authorization': 'Basic {}'.format(enc_creds) }
+        headers = { 'Authorization': 'Basic {0}'.format(enc_creds) }
 
         request = http.Request(uri=uri,
                                method='POST',

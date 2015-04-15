@@ -3,18 +3,6 @@ from distutils.core import setup
 
 import sispy
 
-try:
-    import httplib2
-except ImportError:
-    print(
-        "\n"
-        "\033[1m"
-        "Attention! You don't seem to have httplib2 installed, "
-        "please consider installing it to improve the client's performance"
-        "\033[0m"
-        "\n"    
-    )
-
 version = '.'.join([ str(sispy.__version__[i]) for i in range(3) ])
 
 setup (
