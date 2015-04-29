@@ -25,6 +25,10 @@ The client will work using the standard library only, however, if the bellow pac
 ```
 sudo python ./setup.py install
 ```
+or via PIP
+```
+pip install sispy
+```
 
 # Usage
 
