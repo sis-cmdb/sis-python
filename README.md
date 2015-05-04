@@ -17,7 +17,7 @@ Python client library for interacting with the SIS RESTful API.
 - Python 2.6 - 3.4
 
 The client will work using the standard library only, however, if the bellow packages are installed, it will automatically attempt to use them in order to siginificantly improve it's performance:
-- requests (https://pypi.python.org/pypi/requests/)
+- requests(v2+) (https://pypi.python.org/pypi/requests/)
 - ujson (https://pypi.python.org/pypi/ujson)
 
 # Installation
