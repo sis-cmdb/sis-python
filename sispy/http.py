@@ -8,14 +8,16 @@ from . import json, Response, Error, Meta, NullHandler
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
 
-# attempt to use requests by default, if not available fall back to the 
-# standard library
+# attempt to use requests v2+ if available
+# if not, fall back to the standard library
+HTTP_LIB = 'stdlib'
 try:
     import requests
 except ImportError:
-    HTTP_LIB = 'stdlib'
+    pass
 else:
-    HTTP_LIB = 'requests'
+    if requests.__version__.split('.')[0] >= 2:
+        HTTP_LIB = 'requests'
 
 if HTTP_LIB == 'stdlib':
     # for versions 2.7.9+ and 3.4.3+ we need unverified SSL context to disable
