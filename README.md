@@ -14,7 +14,7 @@ Python client library for interacting with the SIS RESTful API.
 - [LICENSE](#license)
   
 # Dependencies
-- Python 2.6 - 3.4
+- Python 2.6+, 3.4+
 
 The client will work using the standard library only, however, if the bellow packages are installed, it will automatically attempt to use them in order to siginificantly improve it's performance:
 - requests(v2+) (https://pypi.python.org/pypi/requests/)
