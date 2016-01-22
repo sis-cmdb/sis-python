@@ -2,8 +2,10 @@
 
 """Client library for interacting with the SIS RESTful API"""
 
-__version__ = (0, 4, 4)
+__version__ = (1, 0, 0)
 __author__ = 'Anton Gavrik'
+
+import json
 
 import logging
 try:  # Python 2.7+
@@ -16,11 +18,6 @@ except ImportError:
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
 
-# attempt to use ujson to handle json, fall back to stdlib json if unavailable
-try:
-    import ujson as json
-except ImportError:
-    import json
 
 class Response(object):
     """Represent the client's response.
@@ -79,6 +76,7 @@ class Response(object):
                 self.__class__.__name__))
         return list(self._result)
 
+
 class Meta(object):
     """Represents meta data in the clients response."""
 
@@ -96,6 +94,7 @@ class Meta(object):
 
         if 'x-total-count' in self.headers:
             self.total_count = int(self.headers['x-total-count'])
+
 
 class Error(Exception):
     """SIS Error"""
@@ -128,6 +127,7 @@ class Error(Exception):
 
     def __str__(self):
         return self.error
+
 
 from .client import Client
 
