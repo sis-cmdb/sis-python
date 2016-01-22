@@ -2,20 +2,23 @@
 
 import logging
 import sys
+import json
 
-from . import json, Response, Error, Meta, NullHandler
+from . import Response, Error, Meta, NullHandler
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
 
-# attempt to use requests by default, if not available fall back to the 
-# standard library
+# use the standard library by default,
+# but use requests v2+ if available
+HTTP_LIB = 'stdlib'
 try:
     import requests
-except ImportError:
-    HTTP_LIB = 'stdlib'
-else:
-    HTTP_LIB = 'requests'
+    if requests.__version__.split('.')[0] >= 2:
+        HTTP_LIB = 'requests'
+except Exception:
+    pass
+LOG.debug('using {0} to handle http'.format(HTTP_LIB))
 
 if HTTP_LIB == 'stdlib':
     # for versions 2.7.9+ and 3.4.3+ we need unverified SSL context to disable
@@ -57,6 +60,7 @@ else:
     import urllib
     urlencode = urllib.urlencode
 
+
 def get_handler(http_keep_alive=True):
     """Returns an appropriate http handler object based on the available 
     http library.
@@ -67,6 +71,7 @@ def get_handler(http_keep_alive=True):
 
     elif HTTP_LIB == 'requests':
         return RequestsHandler(http_keep_alive=http_keep_alive)
+
 
 class Request(object):
 
@@ -84,6 +89,7 @@ class Request(object):
         s += '{0} '.format(self.uri)
         return s
 
+
 class BaseHTTPHandler(object):
 
     """HTTP Handler proxy base class"""
@@ -93,6 +99,7 @@ class BaseHTTPHandler(object):
 
     def request(self, request):
         raise NotImplementedError
+
 
 class StdLibHandler(BaseHTTPHandler):
 
@@ -130,7 +137,17 @@ class StdLibHandler(BaseHTTPHandler):
                 response = stdlib_urlopen(new_req)
 
         except stdlib_HTTPError as e:
-            response_dict = json.loads(e.read().decode('utf-8'))
+            # read response
+            response_str = e.read().decode('utf-8')
+
+            # decode response, trap non-json responses
+            try:
+                response_dict = json.loads(response_str)
+            except ValueError:
+                raise Error(http_status_code=e.code,
+                            error=('Received a non-json response: {0}'
+                            .format(response_str[:256].encode('utf-8'))))
+                                                            
             code = response_dict.get('code')
 
             # lookup error in the response body,
@@ -145,7 +162,15 @@ class StdLibHandler(BaseHTTPHandler):
                         response_dict=response_dict)
 
         # read response
-        result = json.loads(response.read().decode('utf-8'))
+        response_str = response.read().decode('utf-8')
+
+        # decode response, trap non-json responses
+        try:
+            result = json.loads(response_str)
+        except ValueError:
+            raise Error(http_status_code=response.getcode(),
+                        error=('Received a non-json response: {0}'
+                        .format(response_str[:256].encode('utf-8'))))
 
         # build meta with headers as a dict
         # py3
@@ -162,6 +187,7 @@ class StdLibHandler(BaseHTTPHandler):
 
         # return Response object    
         return Response(result, meta)
+
 
 class RequestsHandler(BaseHTTPHandler):
 
@@ -192,8 +218,13 @@ class RequestsHandler(BaseHTTPHandler):
         # verify=False do not verify SSL cert
         response = self._session.send(prepped, stream=True, verify=False)
 
-        # we always expect a json body
-        response_dict = json.loads(response.text)
+        # decode response, trap non-json responses
+        try:
+            response_dict = json.loads(response.text)
+        except ValueError:
+            raise Error(http_status_code=response.status_code,
+                        error=('Received a non-json response: {0}'
+                        .format(response.text[:256].encode('utf-8'))))
 
         # raise Error if we got http status code >= 400
         if response.status_code >= 400:

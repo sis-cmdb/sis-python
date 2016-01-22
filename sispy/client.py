@@ -8,6 +8,7 @@ from . import http, endpoint, NullHandler
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
 
+
 class Client(object):
 
     """SIS client"""

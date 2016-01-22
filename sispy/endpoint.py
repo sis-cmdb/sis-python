@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 
 import logging
+import json
 
-from . import Error, Response, http, json, NullHandler
+from . import Error, Response, http, NullHandler
 
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
+
 
 class Endpoint(object):
 
