@@ -20,7 +20,7 @@ The client will work using the standard library only, however, if Requests(https
 
 Check which HTTP library is used:
 ```
->>> import sispy; print sispy.http.HTTP_LIB
+>>> import sispy; print(sispy.http.HTTP_LIB)
 requests
 ```
 
