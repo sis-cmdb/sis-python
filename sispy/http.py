@@ -9,20 +9,25 @@ from . import Response, Error, Meta, NullHandler
 LOG = logging.getLogger(__name__)
 LOG.addHandler(NullHandler())
 
-# use the standard library by default,
-# but use requests v2+ if available
+# attempt to use requests v2+(must have Session.prepare_request() method) 
+# if available, else use the stdlib
 HTTP_LIB = 'stdlib'
 try:
     import requests
-    if requests.__version__.split('.')[0] >= 2:
-        HTTP_LIB = 'requests'
-except Exception:
+except ImportError:
     pass
+else:
+    try:
+        if hasattr(requests.Session, 'prepare_request'):
+            HTTP_LIB = 'requests'
+    except AttributeError:
+        pass
+
 LOG.debug('using {0} to handle http'.format(HTTP_LIB))
 
 if HTTP_LIB == 'stdlib':
-    # for versions 2.7.9+ and 3.4.3+ we need unverified SSL context to disable
-    # SSL cer validation on per request basis
+    # for py versions 2.7.9+/3.4.3+ we require "unverified SSL context"
+    # in order to disable SSL cert validation
     SSL_CONTEXT = None
     import ssl
     try:
@@ -145,8 +150,8 @@ class StdLibHandler(BaseHTTPHandler):
                 response_dict = json.loads(response_str)
             except ValueError:
                 raise Error(http_status_code=e.code,
-                            error=('Received a non-json response: {0}'
-                            .format(response_str[:256].encode('utf-8'))))
+                            error=('Failed to decode JSON from the response: {0}'
+                                   .format(response_str[:256].encode('utf-8'))))
                                                             
             code = response_dict.get('code')
 
@@ -169,8 +174,8 @@ class StdLibHandler(BaseHTTPHandler):
             result = json.loads(response_str)
         except ValueError:
             raise Error(http_status_code=response.getcode(),
-                        error=('Received a non-json response: {0}'
-                        .format(response_str[:256].encode('utf-8'))))
+                        error=('Failed to decode JSON from the response: {0}'
+                               .format(response_str[:256].encode('utf-8'))))
 
         # build meta with headers as a dict
         # py3
@@ -223,8 +228,8 @@ class RequestsHandler(BaseHTTPHandler):
             response_dict = json.loads(response.text)
         except ValueError:
             raise Error(http_status_code=response.status_code,
-                        error=('Received a non-json response: {0}'
-                        .format(response.text[:256].encode('utf-8'))))
+                        error=('Failed to decode JSON from the response: {0}'
+                               .format(response.text[:256].encode('utf-8'))))
 
         # raise Error if we got http status code >= 400
         if response.status_code >= 400:
