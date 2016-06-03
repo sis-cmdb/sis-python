@@ -254,6 +254,20 @@ This maps to a PUT '/id' request against the appropriate v1 endpoint.
 
 The updated dict-like Response representing the object is returned on success.
 
+**update_bulk(content, [query])**
+
+This maps to a PUT '/' request against the appropriate endpoint.
+
+* content : a valid dictionary or list of dictionaries conforming to the endpoint specification. Each dictionary should have a '_id' to map to the remote item
+
+Returns a Response dict-like object in the form of
+```
+{
+    'errors': [<items>],
+    'success': [<items>]
+}
+```
+
 **delete(id)**
 
 This maps to a DELETE '/id' request against the appropriate v1 endpoint.
