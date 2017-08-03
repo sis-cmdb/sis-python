@@ -16,7 +16,7 @@ Python client library for interacting with the SIS RESTful API.
 # Dependencies
 - Python 2.6+, 3.4+
 
-The client will work using the standard library only, however, if Requests(https://pypi.python.org/pypi/requests/) v2+(must have Session.prepare_request() method) is installed, it will automatically attempt to use it in order to siginificantly improve it's performance.
+The client will work using the standard library only, however, if Requests(https://pypi.python.org/pypi/requests/) v2+(must have Session.prepare_request() method) is installed, it will automatically attempt to use it in order to siginificantly improve its performance.
 
 Check which HTTP library is used:
 ```
