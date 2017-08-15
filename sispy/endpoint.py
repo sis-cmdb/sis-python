@@ -85,7 +85,7 @@ class Endpoint(object):
         if isinstance(content, list):
             # Handle update if we're provided a list of changes
             headers = self._get_headers(add_content=True)
-            request = http.Request(uri=self._get_uri(),
+            request = http.Request(uri=self._get_uri(query=query),
                                    method='PUT',
                                    body=json.dumps(content),
                                    headers=headers)
@@ -102,7 +102,7 @@ class Endpoint(object):
                             response_dict={})
 
             headers = self._get_headers(add_content=True)
-            request = http.Request(uri=self._get_uri(),
+            request = http.Request(uri=self._get_uri(query=query),
                                    method='put',
                                    body=json.dumps(content),
                                    headers=headers)
@@ -110,7 +110,7 @@ class Endpoint(object):
             return self.client.request(request)
 
         else:
-            err_msg = 'content must be a list of entities or an update dict' +
+            err_msg = 'content must be a list of entities or an update dict' + \
                       ' with a query'
             raise Error(http_status_code=400,
                         error=err_msg,
