@@ -256,9 +256,45 @@ The updated dict-like Response representing the object is returned on success.
 
 **update_bulk(content, [query])**
 
-This maps to a PUT '/' request against the appropriate endpoint.
+This maps to a PUT `/` request against the appropriate endpoint.
 
-* content : a valid dictionary or list of dictionaries conforming to the endpoint specification. Each dictionary should have a '_id' to map to the remote item
+* content : a valid list of dictionaries where each entry contains an update and an `_id` field or a dictionary with an update accompanied with a `query`.
+* query : a dictionary that constructs the query string. Entries that match this query will be updated with the dictionary provided by content.
+
+For example:
+
+```python
+# List of dictionaries to be updated
+updated_entities = [
+    {
+        "_id": "558481a32bcda71c7b948895",
+        "field1": "cat",
+        "field2": 4
+    },
+    {
+        "_id": "558481a383cda2b12390ce12",
+        "field2": 5
+    }
+]
+
+# Execute update with bulk_update
+client.bulk_update(updated_entities)
+
+# Field to be udpated
+update_dict = {
+    "field2": 15
+}
+
+# Query to select which objects should be updated
+update_query = {
+    "q": {
+        "field1": "cat"
+    }
+}
+
+# Execute update with bulk_update
+client.bulk_update(update_dict, update_query)
+```
 
 Returns a Response dict-like object in the form of
 ```
