@@ -223,6 +223,12 @@ class RequestsHandler(BaseHTTPHandler):
         # verify=False do not verify SSL cert
         response = self._session.send(prepped, stream=True, verify=False)
 
+        # Explicitly set response encoding to 'utf-8'. This fixes long responses issue.
+        # This is consistent with StdLib encoding handling.
+        # Long responses issue:
+        # https://github.com/requests/requests/issues/2359
+        response.encoding = 'utf-8'
+
         # decode response, trap non-json responses
         try:
             response_dict = json.loads(response.text)
