@@ -72,6 +72,52 @@ class Endpoint(object):
 
         return self.client.request(request)
 
+    def update_bulk(self, content, query=None):
+        """API Bulk update.
+
+        Returns: a Response dict-like object in the form of
+        {
+            'errors': [<items>],
+            'success': [<items>]
+        }
+        """
+
+        if isinstance(content, list):
+            # Handle update if we're provided a list of changes
+            headers = self._get_headers(add_content=True)
+            request = http.Request(uri=self._get_uri(query=query),
+                                   method='PUT',
+                                   body=json.dumps(content),
+                                   headers=headers)
+
+            return self.client.request(request)
+
+        elif isinstance(content, dict):
+            # Handle update if we're provided a change and a query
+            if query == None:
+                err_msg = 'dictionary updates must be accompanied with a query'
+                raise Error(http_status_code=400,
+                            error=err_msg,
+                            code=0,
+                            response_dict={})
+
+            headers = self._get_headers(add_content=True)
+            request = http.Request(uri=self._get_uri(query=query),
+                                   method='put',
+                                   body=json.dumps(content),
+                                   headers=headers)
+
+            return self.client.request(request)
+
+        else:
+            err_msg = 'content must be a list of entities or an update dict' + \
+                      ' with a query'
+            raise Error(http_status_code=400,
+                        error=err_msg,
+                        code=0,
+                        response_dict={ })
+
+
     def delete_bulk(self, query):
         """Bulk delete.
 
