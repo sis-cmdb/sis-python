@@ -277,8 +277,8 @@ updated_entities = [
     }
 ]
 
-# Execute update with bulk_update
-client.bulk_update(updated_entities)
+# Execute update with update_bulk
+client.update_bulk(updated_entities)
 
 # Field to be udpated
 update_dict = {
@@ -292,8 +292,8 @@ update_query = {
     }
 }
 
-# Execute update with bulk_update
-client.bulk_update(update_dict, update_query)
+# Execute update with update_bulk
+client.update_bulk(update_dict, update_query)
 ```
 
 Returns a Response dict-like object in the form of
